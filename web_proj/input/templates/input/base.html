@@ -26,19 +26,18 @@
 	<header class="site-header">
 	  <nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
 		<div class="container">
-		  <a class="navbar-brand mr-4" href="{% url 'scan-home' %}">Productivity Tracking</a>
+		  <a class="navbar-brand mr-4" href="{% url 'input-scan' %}">Productivity Tracking</a>
 		  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
 		  <span class="navbar-toggler-icon"></span>
 		  </button>
 		  <div class="collapse navbar-collapse" id="navbarToggle">
 			<div class="navbar-nav mr-auto">
-			  <a class="nav-item nav-link" href="{% url 'scan-home' %}">Home</a>
-			  <a class="nav-item nav-link" href="/about">Instructions</a>
+			  <a class="nav-item nav-link" href="{% url 'input-scan' %}">Home</a>
 			</div>
 			<!-- Navbar Right Side -->
 			<div class="navbar-nav">
-			  <a class="nav-item nav-link" href="#">Scan Agent Barcode</a>
-			  <!-- <a class="nav-item nav-link" href="#">Register</a> -->
+			  <a class="nav-item nav-link" href="{% url 'input-scan' % }">Scan</a>
+			  <a class="nav-item nav-link" href="#">About</a>
 			</div>
 		  </div>
 		</div>
@@ -58,7 +57,6 @@
 	          	<li class="list-group-item list-group-item-light">Scan</li>
 	            <li class="list-group-item list-group-item-light">Break</li>
 	            <li class="list-group-item list-group-item-light">End Task</li>
-	            <li class="list-group-item list-group-item-light">End & Log out</li>
 	          </ul>
 	        </p>
 	      </div>
