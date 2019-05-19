@@ -1,0 +1,16 @@
+{% extends 'input/base.html' %}
+
+{% block content %}
+
+<div class="container">
+    <h3>Profile</h3>
+    <p>Username: {{ user }}</p>
+    <p>First name: {{ user.first_name }}</p>
+    <p>Last name: {{ user.last_name }}</p>
+    <p>WMS ID: {{ user.Profile.wms_id }}</p>
+    <p>Current Status: {{ user.Profile.status }}</p>
+    <p>Current Task: {{ user.Profile.current_task }}</p>
+    <p>Is Lead: {{ user.Proile.is_lead }}</p>
+</div>
+
+{% endblock %}
