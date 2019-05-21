@@ -1,9 +1,6 @@
 from django.contrib.auth.models import User
 from users.models import Profile
-from input.models import Group
-
-def get_user_by_username(username):
-	return User.objects.filter(username = username).first()
+from input.models import *
 
 
 def update_profile(user, text, action):
@@ -13,39 +10,27 @@ def update_profile(user, text, action):
 		profile.current_task = text['task']
 	elif action == 'End':
 		profile.status = 1
-		profile.current_task = ''
+		profile.current_task = 'None'
 	else:
 		print("Action Mismatch!")
 	profile.save()
 	
 
 
-def validate(form, request, action):
+def validate(form, request):
 
 	if form.is_valid():
 		post = form.save(commit = False)
 		text = form.cleaned_data
-
-		if action == 'Start' and text['user_name']:
-			post.user = get_user_by_username(text['user_name'])
-		else:
-			post.user = request.user
-
+		
+		post.user = get_user_by_username(text['user_name'])
 		profile = Profile.objects.filter(user = post.user).first()
-		if profile.status == 2 and action == 'Start':
-			text = "You are currently in other task"
-		elif profile.status == 1 and action == 'End':
-			text = "You are currently at IDLE status"
-		else:
-			post.save()
-			update_profile(post.user, text, action)
-		return text
-
-def get_member_list(user):
-	profile = Profile.objects.filter(user = user).first()
-	if profile.is_grp == 0:
-		return None
-	else:
-	    group = Group.objects.get(curr_grp = user)
-	    all_members = group.users.all()
-	    return all_members
+		if profile.status == 2:
+			action = "End"
+			msg = text['user_name'] + " ends task"
+		elif profile.status == 1:
+			action = "Start"
+			msg = text['user_name'] +" starts task: " + text['task'] + " at "
+		post.save()
+		update_profile(post.user, text, action)
+		return msg
