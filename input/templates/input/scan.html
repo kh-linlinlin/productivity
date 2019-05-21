@@ -1,0 +1,97 @@
+{% extends "input/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block javascript %}
+  <script>
+    $("#id_user_name").change(function () {
+      var username = $(this).val();
+
+      $.ajax({
+        url: '/ajax/get_user/',
+        data: {
+          'username': username
+        },
+        dataType: 'json',
+        success: function (data) {
+
+          var is_group = data['is_grp']
+          if (is_group) {
+           $('#member').append('<p><b>Group Members</b></p>\
+            <p class="text-muted"> Scan Barcode to add new member</p>\
+            <form method = "post"> {% csrf_token %} \
+            <div> {{form2.as_p }} </div>\
+            <button type="button" class="btn btn-success">Add</button></form><br><br>');
+
+            var members = data['members']
+            var member_names = data['member_names']
+            for(var i = 0; i < members.length ; i++ ) {
+              var member = members[i]
+              var member_name = member_names[i]
+              $('#member').append('<li class="list-group-item list-group-item-light"> \
+                <a href = "/userprofile/' + member + '"> {{ member_name }}</a>\
+                <a href = "/modify/remove/' + member + '" >\
+                <button type="button" class="btn btn-danger">Remove</button></a>\
+               </li>')
+            }
+          }
+
+          var status = data['status']
+          var task = data['task']
+          console.log(status)
+          if (status == 2) {
+            console.log("To End Task")
+            document.getElementById('taskfield').readOnly=true;
+            document.getElementById('workfield').required = true;
+            document.getElementById('workfield').style.visibility = "visible";
+            document.getElementById('taskfield').style.visibility = "visible";
+            document.getElementById('startbuttonfield').style.visibility = "hidden";
+          } else {
+            console.log("To Start Task")
+            document.getElementById('taskfield').readOnly=false;
+            document.getElementById('workfield').required = false;
+            document.getElementById('taskfield').style.visibility = "visible";
+            document.getElementById('startbuttonfield').style.visibility = "visible";
+            document.getElementById('workfield').style.visibility = "hidden";
+            console.log(document.getElementById('workfield').required)
+          }
+      }
+
+      });
+    });
+  </script>
+{% endblock %}
+
+
+{% block content %}
+  <div class="row">
+
+    <div class="col-md-6">
+      <form method = "post">
+        {% csrf_token %}
+        <div>
+          {{ form1.user_name | as_crispy_field }}
+        </div>
+
+        <div id = "taskfield" style = "visibility: hidden;">
+          {{ form1.task | as_crispy_field}}<br>
+        </div>
+        <div id = "startbuttonfield" style = "visibility: hidden;">
+          <button type = "submit"> Start </button>
+        </div>
+        <div id = "currtask">
+        </div>
+        <div id = "workfield" style = "visibility: hidden;">
+          {{ form1.work_complete | as_crispy_field}}<br>
+          <button type = "submit"> End </button>
+        </div>
+      </form><br>
+
+      <p> {{ text }} </p>
+    </div>
+
+    <div class="col-md-6" id= "member">
+    </div>
+
+  </div>
+{% endblock content %}
+

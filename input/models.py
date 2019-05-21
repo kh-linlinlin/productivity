@@ -7,7 +7,11 @@ class Post(models.Model):
 	task = models.CharField(max_length = 100)
 	user = models.ForeignKey(User, on_delete = models.CASCADE, null = True) 
 	ctime = models.DateTimeField(auto_now = True)
-	work_complete = models.IntegerField(default = 0)
+	work_complete = models.CharField(max_length = 100)
+
+
+def get_user_by_username(username):
+	return User.objects.filter(username = username).first()
 
 
 class Group(models.Model):
