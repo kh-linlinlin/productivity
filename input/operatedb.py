@@ -13,12 +13,13 @@ def update_profile(user, text, action):
 		profile.current_task = 'None'
 	else:
 		print("Action Mismatch!")
+	print(profile)
 	profile.save()
 	
 
 
 def validate(form, request):
-
+	print(form)
 	if form.is_valid():
 		post = form.save(commit = False)
 		text = form.cleaned_data
@@ -31,6 +32,10 @@ def validate(form, request):
 		elif profile.status == 1:
 			action = "Start"
 			msg = text['user_name'] +" starts task: " + text['task'] + " at "
+		post.action = action
 		post.save()
 		update_profile(post.user, text, action)
-		return msg
+	else:
+		msg = "Invalid Form!"
+		print(msg)
+	return msg

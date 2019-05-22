@@ -6,16 +6,15 @@ class Post(models.Model):
 	user_name = models.CharField(max_length = 100)
 	task = models.CharField(max_length = 100)
 	user = models.ForeignKey(User, on_delete = models.CASCADE, null = True) 
-	ctime = models.DateTimeField(auto_now = True)
 	work_complete = models.CharField(max_length = 100)
-
+	action = models.CharField(max_length = 100)
+	ctime = models.DateTimeField(auto_now = True)
 
 def get_user_by_username(username):
 	return User.objects.filter(username = username).first()
 
 
 class Group(models.Model):
-
 	users = models.ManyToManyField(User)
 	curr_grp = models.ForeignKey(User, related_name = "curr_grp", null = True, on_delete = models.DO_NOTHING)
 	ctime = models.DateTimeField(auto_now_add = True)
@@ -35,7 +34,4 @@ class Group(models.Model):
 			curr_grp = curr_grp
 		)
 		group.users.remove(curr_member)
-		
-
-# class Group_modification(models.Model):
 	
