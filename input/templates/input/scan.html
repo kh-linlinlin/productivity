@@ -1,97 +1,186 @@
 {% extends "input/base.html" %}
 {% load crispy_forms_tags %}
 
-{% block javascript %}
-  <script>
-    $("#id_user_name").change(function () {
-      var username = $(this).val();
-
-      $.ajax({
-        url: '/ajax/get_user/',
-        data: {
-          'username': username
-        },
-        dataType: 'json',
-        success: function (data) {
-
-          var is_group = data['is_grp']
-          if (is_group) {
-           $('#member').append('<p><b>Group Members</b></p>\
-            <p class="text-muted"> Scan Barcode to add new member</p>\
-            <form method = "post"> {% csrf_token %} \
-            <div> {{form2.as_p }} </div>\
-            <button type="button" class="btn btn-success">Add</button></form><br><br>');
-
-            var members = data['members']
-            var member_names = data['member_names']
-            for(var i = 0; i < members.length ; i++ ) {
-              var member = members[i]
-              var member_name = member_names[i]
-              $('#member').append('<li class="list-group-item list-group-item-light"> \
-                <a href = "/userprofile/' + member + '"> {{ member_name }}</a>\
-                <a href = "/modify/remove/' + member + '" >\
-                <button type="button" class="btn btn-danger">Remove</button></a>\
-               </li>')
-            }
-          }
-
-          var status = data['status']
-          var task = data['task']
-          console.log(status)
-          if (status == 2) {
-            console.log("To End Task")
-            document.getElementById('taskfield').readOnly=true;
-            document.getElementById('workfield').required = true;
-            document.getElementById('workfield').style.visibility = "visible";
-            document.getElementById('taskfield').style.visibility = "visible";
-            document.getElementById('startbuttonfield').style.visibility = "hidden";
-          } else {
-            console.log("To Start Task")
-            document.getElementById('taskfield').readOnly=false;
-            document.getElementById('workfield').required = false;
-            document.getElementById('taskfield').style.visibility = "visible";
-            document.getElementById('startbuttonfield').style.visibility = "visible";
-            document.getElementById('workfield').style.visibility = "hidden";
-            console.log(document.getElementById('workfield').required)
-          }
-      }
-
-      });
-    });
-  </script>
-{% endblock %}
-
-
 {% block content %}
   <div class="row">
 
     <div class="col-md-6">
-      <form method = "post">
-        {% csrf_token %}
-        <div>
-          {{ form1.user_name | as_crispy_field }}
-        </div>
+      <form action = "/create_post/" method = "POST" id="action_form" >{% csrf_token %}
+        {{ form1.user_name | as_crispy_field }}
 
-        <div id = "taskfield" style = "visibility: hidden;">
-          {{ form1.task | as_crispy_field}}<br>
+        <div style = "visibility: hidden;">     
+        {{ form1.task | as_crispy_field}}
         </div>
         <div id = "startbuttonfield" style = "visibility: hidden;">
-          <button type = "submit"> Start </button>
-        </div>
-        <div id = "currtask">
-        </div>
-        <div id = "workfield" style = "visibility: hidden;">
-          {{ form1.work_complete | as_crispy_field}}<br>
-          <button type = "submit"> End </button>
-        </div>
+          <br><button type = "submit" id = "start"> Start </button>
+        </div>  
+        <div style = "visibility: hidden;">
+        {{ form1.work_complete | as_crispy_field }} 
+        <br>
+        <button type = "submit" id = "record"> Record </button>
+        <button type = "submit" id = "end"> End </button>
+        </div>      
       </form><br>
 
-      <p> {{ text }} </p>
+      <div id = "error">
+      </div>
     </div>
 
-    <div class="col-md-6" id= "member">
+    <div class="col-md-6" id= "groupfield" style = "visibility: hidden;">
+
+      <p><b>Group Members</b></p>
+      <form method = "post" id = "group_form" > {% csrf_token %} 
+      <div> <label for="id_member_name">Add members by scanning agent barcode:</label> {{form2.member_name | as_crispy_field }} </div>
+      <button type="button" id = "add" class="btn btn-success btn-sm">Add</button></form><br>
+      
+      <div class="table-responsive" id="member">     
+      </div>
+
     </div>
 
+    <div id = "action_logs">
+    </div>
   </div>
 {% endblock content %}
+
+
+{% block javascript %}
+  <script> 
+  $("#id_user_name").change(function () {
+    var username = $(this).val();
+
+    // Get user information with input: user_name
+    $.ajax({
+      url: '/ajax/get_user/',
+      data: {
+        'username': username
+      },
+      dataType: 'json',
+      success: function (data) {
+
+        var status = data['status']
+        var task = data['task']
+        var to_use_this_task = false
+
+        document.getElementById('div_id_user_name').innerHTML = "Logged in as: " + username
+        document.getElementById("div_id_task").style.visibility = "visible";
+        
+        // If user is currently at task
+        if (status == 2) {
+          document.getElementById('div_id_task').innerHTML = "Current Task: " + task;
+          document.getElementById('startbuttonfield').style.visibility = "hidden";
+          document.getElementById("div_id_work_complete").style.visibility = "visible";
+          document.getElementById("record").style.visibility = "visible";
+          document.getElementById("end").style.visibility = "visible";
+          to_use_this_task = true;
+        } else {
+          // If user is currently at break/IDLE
+          console.log("To Start Task");            
+          document.getElementById('startbuttonfield').style.visibility = "visible";
+          document.getElementById("div_id_work_complete").style.visibility = "hidden";
+        }
+
+        var is_group = data['is_grp']
+        if (is_group) {
+          document.getElementById('groupfield').style.visibility = "visible"
+
+          $(document).ready(function(){
+            load_members();
+
+            $('#add').click(function() {
+              var new_member = $('#id_member_name').val();
+              $.ajax({
+                url: '/ajax/modify/' + username + '/add/' + new_member +'/',
+                success: function (data) {
+                  load_members()
+                }
+              });
+            });
+
+            $(document).on('click', '.remove', function() {
+              var old_member = $(this).attr('id');
+              console.log("To remove member: " + old_member)
+              $.ajax({
+                url: '/ajax/modify/' + username + '/remove/' + old_member +'/',
+                success: function (data) {
+                  load_members()
+                }
+              });
+            });
+          });
+        }
+
+        $('#action_form').on('submit', function(event){
+            event.preventDefault();
+            create_post();
+        });
+
+        // load all group members & button for removal
+        function load_members(){
+          $.ajax({
+            url: '/ajax/get_group_members/',
+            data: {
+              'username': username
+            },
+            dataType: 'json',
+            success: function (data) {
+
+              var members = data['members']
+              var member_names = data['member_names']
+              $('#member').empty()
+              $('#member').append('<table>')
+
+              // iterate through all members
+              for(var i = 0; i < members.length ; i++ ) {
+                var member = members[i]
+                var member_name = member_names[i]
+                var serial_no = i + 1
+                $('#member').append('<tr>\
+                    <td width="10%">' + serial_no + '. ' + '</td>\
+                    <td width="60%">' + member_name + '</td>\
+                    <td width="30%"><button type="button" name="remove" class="btn btn-danger btn-sm remove" id= "'+ member_name + '" >Remove</button></td>\
+                    </tr><br>');
+              }
+              $('#members').append('</table>')
+            } 
+          });
+        }
+
+        //AJAX for posting form
+        function create_post(){
+          var formdata = $('#action_form').serialize();
+
+          // add fields value when they are empty
+          formdata += "&user_name=" + encodeURIComponent(username);
+          if(to_use_this_task) {
+            formdata += "&task=" + encodeURIComponent(task);
+          }
+          console.log(formdata)
+
+          $.ajax({
+            url : "/ajax/post/", 
+            type : "POST", 
+            data : formdata,
+          
+            // handle a successful response
+            success : function() {
+                // $('#post-task').empty(); 
+                // $('#post-user_name').empty();
+                // $("#action_logs").prepend("<li><strong>"+json.user_name+"</strong> - <em> "+json.task+"</em> - <span> "+json.ctime+"</span></li>");
+                console.log("success"); 
+            },
+
+            // handle a non-successful response
+            error : function(xhr, errmsg, err) {
+                $('#error').html("<div class='alert-box alert radius' data-alert>Oops! We have encountered an error: "+errmsg+
+                    " <a href='#' class='close'>&times;</a></div>"); // add the error to the dom
+            }
+          });
+        }
+      }
+    });
+  });
+  </script>
+{% endblock %}
+
 

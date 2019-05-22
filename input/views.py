@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect
 from django.views.generic import TemplateView
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
 from input.forms import UserForm, GroupForm
 from input.models import *
 from input.operatedb import * 
+import json
 
 from users.models import Profile
 
@@ -45,17 +47,22 @@ class ScanView(TemplateView):
         return render(request, self.template_name, args)
 
 
-    def post(self, request):
-        form = UserForm(request.POST)
-        text = validate(form, request)    
+    def post(request):
+        if request.method == 'POST':
+            form = UserForm(request.POST)
+            text = validate(form, request) 
+            return HttpResponse(text)
 
-        form = UserForm() 
-        args = {'form': form, 'text': text} 
-        return render(request, self.template_name, args)
+        else:
+            return HttpResponse(
+            json.dumps({"nothing to see": "this isn't happening"}),
+            content_type="application/json"
+        )
 
 
 
 def get_user_info(request):
+    print(request)
     username = request.GET.get('username', None)
     user = User.objects.filter(username = username).first()
     profile = Profile.objects.filter(user = user).first()
@@ -63,28 +70,18 @@ def get_user_info(request):
     user_is_grp = profile.is_grp
     user_status = profile.status
     user_curr_task = profile.current_task
-    if user_is_grp:
-        members, names = get_member_list(user)
-        data = {
-            'status': user_status,
-            'is_grp': user_is_grp,
-            'task': user_curr_task,
-            'members': members,
-            'member_names': names
-        }
-    else:
-        data = {
-            'status': user_status,
-            'is_grp': user_is_grp,
-            'task': user_curr_task,
-            'members': [],
-            'member_names': []
-        }
 
+    data = {
+        'status': user_status,
+        'is_grp': user_is_grp,
+        'task': user_curr_task
+    }
     return JsonResponse(data)
 
 
-def get_member_list(user):
+def get_member_list(request):
+    username = request.GET.get('username', None)
+    user = User.objects.filter(username = username).first()
     group = Group.objects.get(curr_grp = user)
     all_members = group.users.all()
     members = []
@@ -93,16 +90,22 @@ def get_member_list(user):
         member_info = User.objects.filter(username = member.username).first()
         members.append(member_info.pk)
         names.append(member_info.username)
-    print(names)
-    print(members)
-    return members, names
+
+    data = {
+        'members': members,
+        'member_names': names
+    }
+    return JsonResponse(data)
 
 
-def modify_grp(request, modification, pk):
-    member = User.objects.get(pk=pk)
+def modify_grp(request, owner, modification, member):
+    member = User.objects.filter(username = member).first()
+    owner = User.objects.filter(username = owner).first()
 
     if modification == 'add':
-        Group.add_member(request.user, member)
+        Group.add_member(owner, member)
+        msg = member.username + " is added to " + owner.username
     elif modification == 'remove':
-        Group.remove_member(request.user, member)
-    return redirect('input:scan')
+        Group.remove_member(owner, member)
+        msg = member.username + " is removed from " + owner.username
+    return HttpResponse(msg)
