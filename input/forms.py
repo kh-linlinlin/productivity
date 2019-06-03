@@ -1,7 +1,9 @@
 from django import forms
-from input.models import Post
+from input.models import Post, Task
 from django.contrib.auth.models import User 
-task_list = ['Picking', 'Packing', 'Receiving', 'QC', 'Bundling', 'Putaway']
+import json
+from django.core.serializers.json import DjangoJSONEncoder
+
 
 class ActionForm(forms.ModelForm):
 	user_name = forms.CharField()
@@ -13,9 +15,17 @@ class ActionForm(forms.ModelForm):
 		fields = ('user_name', 'task', 'work_complete')
 
 	def clean(self):
+		self.cleaned_data['task'].capitalize()
+		self.cleaned_data['work_complete'].capitalize()
+		print(self.cleaned_data['task'])
+
+		tasks_queryset = Task.objects.all().values('task_code')
+		task_list = json.dumps(list(tasks_queryset), cls = DjangoJSONEncoder)
+		
+
 		if self.cleaned_data['task'] not in task_list:
 			raise forms.ValidationError("This task is not valid. Please scan again!")
-		return self.cleaned_data  
+		return self.cleaned_data    
 
 
 class GroupForm(forms.ModelForm):

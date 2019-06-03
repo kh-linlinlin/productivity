@@ -1,0 +1,256 @@
+{% extends "input/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-md-6">
+      <form method = "POST" id="action_form" >{% csrf_token %}
+        {{ form1.user_name | as_crispy_field }}
+        <div id = "backbuttonfield" style = "visibility: hidden;" value = "barcodeValue" autofocus/>
+          <p><a class="button" href="{% url 'input:scan' %}" > Change User </a></p>
+        </div>
+        <div id = "history">      
+          <br><br>
+          {% for post in posts %}
+          <p class="article-content"> <small class="text-muted">{{ post.ctime }}</small>
+          {{post.user_name}} {{ post.action }} {{ post.task }} </p> 
+          {% endfor %}  
+        </div>
+
+        <div style = "visibility: hidden;" required>     
+        {{ form1.task | as_crispy_field}}
+          {% for error in form.non_field_errors %}
+            <div class="alert alert-danger">
+                <strong>{{ error|escape }}</strong>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div id = "startbuttonfield" style = "visibility: hidden;">
+          <br><button type = "submit" id = "start" class="btn btn-success btn-sm" > Start </button>
+        </div>  
+
+        <div style = "visibility: hidden;">
+        {{ form1.work_complete | as_crispy_field }} 
+        <button type="button" class="btn btn-primary btn-sm" id = "record"> Record </button>     
+        <button type = "submit" class="btn btn-default btn-sm" id = "end"> Record & End </button>
+        </div>      
+      </form><br>
+
+      <div id = "error">
+      </div>
+      <div id = "action_logs">
+      </div>
+
+    </div>
+
+    <div class="col-md-6" id= "groupfield" style = "visibility: hidden;">
+
+      <p><b>Group Members</b></p>
+      <form method = "post" id = "group_form" > {% csrf_token %} 
+      <div> <label for="id_member_name">Add members by scanning agent barcode:</label> {{form2.member_name | as_crispy_field }} </div>
+      <button type="button" id = "add" class="btn btn-success btn-sm">Add</button></form><br>
+      
+      <div class="table-responsive" id="member">     
+      </div>
+
+    </div>
+  </div>
+{% endblock content %}
+
+
+{% block javascript %}
+<script type="text/javascript">
+  var username = '';
+  var update_status = true;
+  var to_use_this_task = false;
+  var status = 0;
+  var task = '';
+  var is_group = false;
+  var modifiable = true;
+
+  // $('#id_user_name').scannerDetection({
+  //   timeBeforeScanTest: 200,
+  //   avgTimeByChar: 60,    
+  //   preventDefault: true, 
+  //   endChar: [13],   
+  //   onComplete: function(barcodeValue, qty) {
+  //     console.log("Scanner detected!")
+  //     username = barcodeValue;
+  //     $('#history').empty();
+
+   $("#id_user_name").change(function () {
+      username = $(this).val();
+      $('#history').empty();
+
+      // Get user information with input: user_name
+      $.ajax({
+        url: '/ajax/get_user/',
+        data: {
+          'username': username
+        },
+        dataType: 'json',
+        success: function (data) {
+          $('#error').empty();
+          show_task(data);        
+
+          $('#action_form').on('submit', function(event){
+            event.preventDefault();
+            update_status = true;
+            create_post(update_status);
+          });
+
+          // $("#div_id_work_complete").scannerDetection({
+          //     timeBeforeScanTest: 200,
+          //     avgTimeByChar: 60,    
+          //     preventDefault: true, 
+          //     endChar: [13],   
+          //     onComplete: function(barcodeValue, qty) {
+            $("#div_id_work_complete").change(function () {
+                update_status = false;
+                create_post(update_status);
+              // },
+              // onError: function(string){alert('Record Error ' + string);}
+            });
+        },
+        error : function(xhr, errmsg, err) {alert("Invalid User!")}
+      });
+     //  }, 
+     // onError: function(string) {alert('Scanner Error ' + string);}
+  });
+
+  function show_task(data){
+    console.log(data)
+    status = data['status']
+    task = data['task']
+    is_group = data['is_grp']
+
+    document.getElementById('div_id_user_name').innerHTML = "Logged in as: " + username;
+    document.getElementById("div_id_task").style.visibility = "visible";        
+    document.getElementById('backbuttonfield').style.visibility = "visible";
+    
+    if (status == 2) {
+      $('#history').empty()
+      document.getElementById('div_id_task').innerHTML = "Current Task: " + task;
+      document.getElementById('startbuttonfield').style.visibility = "hidden";
+      document.getElementById("div_id_work_complete").style.visibility = "visible";
+      document.getElementById("end").style.visibility = "visible";
+      document.getElementById("record").style.visibility = "visible";
+      to_use_this_task = true;
+      modifiable = false;
+    } else {
+      console.log("To Start Task");            
+      document.getElementById('startbuttonfield').style.visibility = "visible";
+      document.getElementById("div_id_work_complete").style.visibility = "hidden";
+      document.getElementById("end").style.visibility = "hidden";
+      document.getElementById("record").style.visibility = "hidden";
+    }
+    //show group details for group barcode
+    if (is_group) {show_group(modifiable);}
+  }
+
+  function show_group(modifiable){
+
+    document.getElementById('groupfield').style.visibility = "visible"
+
+    if (modifiable) {
+      $(document).ready(function(){
+        load_members();
+        $('#add').click(function() {
+          var new_member = $('#id_member_name').val();
+          $.ajax({
+            url: '/ajax/modify/' + username + '/add/' + new_member +'/',
+            success: function (data) {
+              load_members(modifiable)
+            },
+             error : function(xhr, errmsg, err) {alert("Invalid User!")}
+          });
+        });
+
+        $(document).on('click', '.remove', function() {
+          var old_member = $(this).attr('id');
+          console.log("To remove member: " + old_member)
+          $.ajax({
+            url: '/ajax/modify/' + username + '/remove/' + old_member +'/',
+            success: function (data) {
+              load_members(modifiable)
+            }
+          });
+        });
+      });
+    } else {
+      document.getElementById('group_form').visibility = "hidden";
+      document.getElementById('add').visibility = "hidden";
+      load_members(modifiable);
+    }
+  }
+
+
+  // load all group members & button for removal
+  function load_members(modifiable){
+    $.ajax({
+      url: '/ajax/get_group_members/',
+      data: {
+        'username': username
+      },
+      dataType: 'json',
+      success: function (data) {
+
+        var members = data['members']
+        var member_names = data['member_names']
+        $('#member').empty()
+        $('#member').append('<table>')
+
+        // iterate through all members
+        for(var i = 0; i < members.length ; i++ ) {
+          var member = members[i]
+          var member_name = member_names[i]
+          var serial_no = i + 1
+          $('#member').append('<tr>\
+              <td width="10%">' + serial_no + '. ' + '</td>\
+              <td width="60%">' + member_name + '</td>\
+              <td width="30%"><button type="button" name="remove" class="btn btn-danger btn-sm remove" id= "'+ member_name + '" >Remove</button></td>\
+              </tr><br>');
+        }
+        $('#members').append('</table>')
+      } 
+    });
+  }
+
+  //AJAX for posting form
+  function create_post(update_status){
+    var formdata = $('#action_form').serialize();
+
+    // add fields value when they are empty
+    formdata += "&user_name=" + encodeURIComponent(username);
+    if(to_use_this_task) {
+      formdata += "&task=" + encodeURIComponent(task);
+    }
+    console.log(formdata)
+    if (update_status) {
+      url = "/ajax/post/"
+    } else {
+      url = "/ajax/record/"
+    }
+
+    $.ajax({
+      url : url, 
+      type : "POST", 
+      data : formdata,          
+      success : function(data) {
+        $('#action_logs').append('<p>' + data['work_complete'] + ' </p>');
+        if (update_status) {
+          location.reload(true);
+        }
+      },
+      error : function(xhr, errmsg, err) {
+          $('#error').html("<div class='alert-box alert radius' data-alert>Error: "+errmsg+
+              " <a href='#' class='close'>&times;</a></div>"); // add the error to the dom
+      }
+    });
+  }  
+ 
+</script>
+{% endblock %}
+
+

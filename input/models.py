@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 
 class Post(models.Model):
@@ -8,6 +9,7 @@ class Post(models.Model):
 	user = models.ForeignKey(User, on_delete = models.CASCADE, null = True) 
 	work_complete = models.CharField(max_length = 100)
 	action = models.CharField(max_length = 100)
+	members = models.TextField() # list of pk of User object
 	ctime = models.DateTimeField(auto_now = True)
 
 def get_user_by_username(username):
@@ -34,4 +36,28 @@ class Group(models.Model):
 			curr_grp = curr_grp
 		)
 		group.users.remove(curr_member)
+
+class Task(models.Model):
+
+	TASK_CHOICES = (
+		('IB', 'Inbound'),
+		('OB', 'Outbound'),
+		('INV', 'Inventory'),
+		('UN', 'Unspecified'),
+		('BK', 'Break')
+	)
+
+	WHS_CHOICES = (
+		('MYL', 'MYL'),
+		('THA', 'THA'), 
+		('VNN', 'VNN'),
+		('UN', 'Unspecified'),
+	)
+
+	task_code = models.CharField(max_length = 100)
+	whs_id = models.CharField(max_length = 3, choices = WHS_CHOICES, default = 'UN')
+	category = models.CharField(max_length  = 3, choices = TASK_CHOICES, default = 'UN')
+	task_name = models.TextField()
+	output_record = models.BooleanField(default = 0)
+
 	
