@@ -46,9 +46,22 @@ def get_data(request, *args, **kwargs):
 
     return JsonResponse(info)
 
-def about(request):
-    users = User.objects.all()
-    return render(request, 'input/about.html', {'users': users})
+def about(request, *args, **kwargs):
+    return render(request, 'input/about.html', {})
+
+def get_about_data(request, *args, **kwargs):
+    users = User.objects.values('id', 'username').order_by("id")
+    users = json.loads(json.dumps(list(users), cls=DjangoJSONEncoder))
+    tasks = Task.objects.values('category', 'task_code', 'task_name').order_by("category")
+    tasks = json.loads(json.dumps(list(tasks), cls=DjangoJSONEncoder))
+
+    data = {
+    'users': users, 
+    'tasks': tasks
+    }
+    print(data)
+    return JsonResponse(data)
+
 
 def introduction(request):
     return render(request, 'input/introduction.html')
@@ -75,7 +88,7 @@ class ScanView(TemplateView):
     def get(self, request):
         form1 = ActionForm()
         form2 = GroupForm()
-        posts = Post.objects.filter(ctime__gte=datetime.datetime.now().date()).order_by('-ctime')
+        posts = Post.objects.filter(ctime__gte=datetime.datetime.now().date()).exclude(action = 'Record').order_by('-ctime')
         args = {'form1': form1, 'form2': form2 , 'posts': posts}
         return render(request, self.template_name, args)
 
@@ -85,8 +98,7 @@ class ScanView(TemplateView):
         if request.method == 'POST':
             form = ActionForm(request.POST)
             text = validate(form, request, update_status = True) 
-            return HttpResponse(text)
-
+            return JsonResponse(text)
         else:
             return HttpResponse(
             json.dumps({"nothing to see": "this isn't happening"}),
@@ -98,14 +110,11 @@ class ScanView(TemplateView):
             form = ActionForm(request.POST)
             text = validate(form, request, update_status = False) 
             return JsonResponse(text)
-
         else:
             return HttpResponse(
             json.dumps({"nothing to see": "this isn't happening"}),
             content_type="application/json"
         )
-
-
 
 def get_user_info(request):
     username = request.GET.get('username', None)
@@ -127,7 +136,7 @@ def get_user_info(request):
 def get_member_list(request):
     username = request.GET.get('username', None)
     user = User.objects.filter(username = username).first()
-    group = Group.objects.get(curr_grp = user)
+    group = Group.objects.get(grp_name = user)
     group_profile = Profile.objects.filter(user = user).first()
     group_status = group_profile.status
     all_members = group.users.all()
@@ -153,25 +162,60 @@ def modify_grp(request, owner, modification, member):
     member = User.objects.filter(username = member).first()
     owner = User.objects.filter(username = owner).first()
 
+    data = {
+        'success': False,
+        'msg': '',
+    }
+
     if modification == 'add':
         member_profile = Profile.objects.filter(user = member).first()
         if member_profile.status == 2:
-            msg = "Currently in other tasks"
-            print(msg)
-            return HttpResponse(msg)
+            data['msg'] =  member.username + " is currently in other tasks"
+            return JsonResponse(data)
         else:
             Group.add_member(owner, member)
-            msg = member.username + " is added to " + owner.username
+            data['success'] = True
+            data['msg'] = member.username + " is added to " + owner.username
     elif modification == 'remove':
         Group.remove_member(owner, member)
-        msg = member.username + " is removed from " + owner.username
-    return HttpResponse(msg)
+        data['success'] = True
+        data['msg'] = member.username + " is removed from " + owner.username
+    return JsonResponse(data)
 
 
 def check_task(request):
     task = request.GET.get('task', None)
-    need_output = Task.objects.get(task_code = task).output_record 
     data = {
-        'need_output': need_output
+        'valid': False,
+        'need_output': False
     }
+    tasks_queryset = Task.objects.all().values('task_code')
+    task_list = json.dumps(list(tasks_queryset), cls = DjangoJSONEncoder)
+
+    if task in task_list:
+        data['valid'] = True
+        data['need_output'] = Task.objects.get(task_code = task).output_record 
     return JsonResponse(data)
+
+
+def validate_work_complete(request):
+    task = request.GET.get('task', None)
+    work = request.GET.get('work_complete', None)
+    data = {
+        'valid': False
+    }
+
+    tasks_queryset = Task.objects.all().values('task_code')
+    task_list = json.dumps(list(tasks_queryset), cls = DjangoJSONEncoder)
+    users_queryset = User.objects.all().values('username')
+    user_list = json.dumps(list(users_queryset), cls = DjangoJSONEncoder)
+
+    if not ((work in task_list) | (work in user_list)):
+        data['valid'] = True
+
+    return JsonResponse(data)
+
+
+
+
+

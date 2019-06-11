@@ -15,16 +15,11 @@ class ActionForm(forms.ModelForm):
 		fields = ('user_name', 'task', 'work_complete')
 
 	def clean(self):
-		self.cleaned_data['task'].capitalize()
-		self.cleaned_data['work_complete'].capitalize()
-		print(self.cleaned_data['task'])
+		self.cleaned_data['user_name'].upper()
+		self.cleaned_data['task'].upper()
+		self.cleaned_data['work_complete'].upper()
+		print(self.cleaned_data)
 
-		tasks_queryset = Task.objects.all().values('task_code')
-		task_list = json.dumps(list(tasks_queryset), cls = DjangoJSONEncoder)
-		
-
-		if self.cleaned_data['task'] not in task_list:
-			raise forms.ValidationError("This task is not valid. Please scan again!")
 		return self.cleaned_data    
 
 

@@ -33,13 +33,10 @@
 
       </form><br>
 
-      <div id = "action_logs">
-      </div>
-
+      <div id = "action_logs"></div>
     </div>
 
     <div class="col-md-6" id= "groupfield" style = "visibility: hidden;">
-
       <p><b>Group Members</b></p>
       <form method = "post" id = "group_form" > {% csrf_token %} 
       <div> <label for="id_member_name">Add members by scanning agent barcode:</label> {{form2.member_name | as_crispy_field }} </div>
@@ -48,7 +45,6 @@
       
       <div class="table-responsive" id="member">     
       </div>
-
     </div>
   </div>
 {% endblock content %}
@@ -63,6 +59,7 @@
   var task = ''
   var is_group = false
   var work_complete = ''
+  var output_valid = false
   var need_output = true;
 
   $("#id_user_name").focus();
@@ -86,10 +83,55 @@
         success: function (data) {  
           show_task(data);  
 
+          $("#div_id_task").scannerDetection({
+              timeBeforeScanTest: 200,
+              avgTimeByChar: 60,    
+              preventDefault: true, 
+              endChar: [13],   
+              onComplete: function(taskValue, qty) {
+                $.ajax({
+                    url: '/ajax/check_task/',
+                    data:{
+                      'task': taskValue
+                    },
+                    dataType: 'json',
+                    success: function (data) {
+                      console.log(data)
+                      valid = data['valid']
+                      if (!valid) {
+                        alert("Invalid Task!")
+                        $("#start").attr("disabled", true);
+                      } else {
+                        $("#start").attr("disabled", false);
+                        $('#id_task').val(taskValue);
+                      }
+                    },
+                    error: function(errmsg) {
+                      console.log("check task error! "+ errmsg)}
+                  });
+              }, onError: function(errmsg){ alert('Work Complete Field Error! ' + errmsg);}
+          });
+
+          $(document).keypress(
+			  function(event){
+			    if (event.which == '13') {
+			      event.preventDefault();
+			    }
+			});
+
           $('#action_form').on('submit', function(event){
-            event.preventDefault();
-            update_status = true;
-            create_post(update_status);
+            $this = $(this);
+            if (event.keyCode == 13 || event.keyCode == 17 || event.keyCode == 74 || $this.data().isSubmitted) {
+              event.preventDefault();
+              return false;
+            } else {
+              event.preventDefault();
+              update_status = true;
+              $(":submit", this).attr("disabled", "disabled");
+              console.log("Multiple submissions are blocked")
+              $this.data().isSubmitted = true;
+              create_post(update_status);
+            }
           });
 
           $("#div_id_work_complete").scannerDetection({
@@ -99,16 +141,19 @@
               endChar: [13],   
               onComplete: function(workValue, qty) {
                 work_complete = workValue;
-                update_status = false;
-                create_post(update_status);
+                work_validation(task, work_complete);
+                if (output_valid) {
+                  console.log("Valid Output!")
+                  update_status = false;
+                  create_post(update_status);
+                }
                 $("id_work_complete").val('');
                 $('id_work_complete').focus();
-
               }, onError: function(errmsg){alert('Work Complete Field Error! ' + errmsg);}
             });
         }, error : function(xhr, errmsg, err) {alert("Invalid User!")}
       });
-      }, onError: function(string) {alert('Scanner Error ' + string);}
+      }, onError: function(xhr, errmsg, err) {alert('Scanner Error ' + errmsg);}
   });
 
 
@@ -168,17 +213,31 @@
     
     $(document).ready(function(){
       load_members();
-      $('#add').click(function() {
+      $('#add').click(function(event) {
+        event.preventDefault();
+        if (event.keyCode == 13 || event.keyCode == 17 || event.keyCode == 74) {
+              event.preventDefault();
+              return false;
+        } else {
         var new_member = $('#id_member_name').val();
         $.ajax({
           url: '/ajax/modify/' + username + '/add/' + new_member +'/',
           success: function (data) {
+            var add_success = data['success']
             load_members();
+            if (!add_success) {
+              alert("Error! " + data['msg'])
+              return false;
+            }
+            if (status == 2 & add_success) {
+              console.log("Record group details after adding")
+              create_post(update_status = false);
+            }
             $("id_member_name").val('');
           },
            error : function(xhr, errmsg, err) {alert("Invalid User!")}
         });
-      });
+      }});
 
       $(document).on('click', '.remove', function() {
         var old_member = $(this).attr('id');
@@ -186,7 +245,11 @@
         $.ajax({
           url: '/ajax/modify/' + username + '/remove/' + old_member +'/',
           success: function (data) {
-            load_members()
+            load_members();
+            if (status == 2) {
+              console.log("Record group details after removing")
+              create_post(update_status = false);
+            }
           }
         });
       });
@@ -206,7 +269,7 @@
         var members = data['members']
         var member_names = data['member_names']
         $('#member').empty()
-        $('#member').append('<table>')
+        $('#member').append('<table class="table table-bordered">')
 
         // iterate through all members
         for(var i = 0; i < members.length ; i++ ) {
@@ -226,6 +289,7 @@
 
   //AJAX for posting form
   function create_post(update_status){
+    $("#action_form").attr('disabled','disabled');
     var formdata = $('#action_form').serialize();
 
     // add fields value when they are empty
@@ -247,12 +311,37 @@
       data : formdata,          
       success : function(data) {
         $('#action_logs').append('<p>' + data['work_complete'] + ' </p>');
-        if (update_status) {
+        console.log(data);
+        if ((update_status) | (task.includes('PACK'))) {
           location.reload(true);
         }
       },
       Error: function(string) {alert('Post Error ' + string);}
     });
+  }
+
+  function work_validation(task, work_complete) {
+    $.ajax({
+        url: '/ajax/validate_work_complete/' ,
+        data:{
+          'task': task,
+          'work_complete': work_complete,
+        },
+        dataType: 'json',
+        success: function (data) {
+          if (data['valid']) {
+            output_valid = true
+            $("div_id_work_complete").val(work_complete);
+          } else {
+            output_valid = false
+            $("div_id_work_complete").val('');
+            alert("Invalid! User/task barcodes are detected.");
+            return false;
+          }
+        },
+        error: function(errmsg) {
+          console.log("Work complete validation error! "+ errmsg)}
+      });
   }  
  
 </script>

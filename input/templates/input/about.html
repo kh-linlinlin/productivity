@@ -1,9 +1,101 @@
 {% extends "input/base.html" %}
-{% block content %}
-  <h3> User List </h3>
-   {% for user in users %}
-       <li>{{ user.username }}</li>
-    {% endfor %}
-   <br><br>
-   <h3> Task List </h3>
-{% endblock content %}
+{% block about %}
+
+<article class="media content-section">
+  <div class="media-body">
+    <div class="article-metadata">
+      <h3><a class="mr-2" > Task List </a></h3>
+    </div>
+    <div id = "task_table">
+    </div>
+</div>
+</article>
+
+<article class="media content-section">
+<div class="media-body">
+    <div class="article-metadata">
+      <h3><a class="mr-2" > User List </a></h3>
+    </div>
+    <div id = "user_table">
+    </div>
+</div>
+</article>
+
+
+{% block javascript %}
+<script type="text/javascript">
+
+$(document).ready(function(){
+    $.ajax({
+        method: "GET",
+        url: '/api/about_data/',
+        success: function(data){
+            users = data.users
+            tasks = data.tasks
+
+            user_table(users);
+            task_table(tasks);
+        },
+        error: function(error_data){
+           alert("Error! " + error_data)
+        }
+    });
+});
+
+function user_table(users) {
+    var users = users
+    var tableHTML = ''
+
+    tableHTML = ('<table class="table table-hover table-bordered align="center" ">\
+    <thead>\
+    <tr>\
+        <th>#</th>\
+        <th>User Name</th>\
+    </tr>\
+    </thead>\
+    <tbody>')    
+
+    for (var a=0; a < users.length; a++) {
+        tableHTML += ("<tr>");
+        for(var b=0; b<2; b++) {
+            if (b == 0) {tableHTML += ("<td>"+ users[a]['id'] +"</td>");}
+            if (b == 1) {tableHTML += ("<td>"+ users[a]['username'] +"</td>");}
+        }
+        tableHTML += ("</tr>");
+    }
+    tableHTML += ("</tbody></table")
+    document.getElementById("user_table").innerHTML = tableHTML
+    }
+
+function task_table(tasks) {
+    var tasks = tasks
+    var tableHTML = ''
+    
+    tableHTML += ('<table class="table table-hover table-bordered align="center" ">\
+    <thead>\
+    <tr>\
+        <th>#</th>\
+        <th>Category</th>\
+        <th>Task Code</th>\
+        <th>Task Name</th>\
+    </tr>\
+    </thead>\
+    <tbody>')
+
+    for (var a=0; a < tasks.length; a++) {
+            tableHTML += ("<tr>");
+            for(var b=0; b<4; b++) {
+                if (b == 0) {tableHTML += ("<td>"+ (a+1) +"</td>");}
+                if (b == 1) {tableHTML += ("<td>"+ tasks[a]['category'] +"</td>");}
+                if (b == 2) {tableHTML += ("<td>"+ tasks[a]['task_code'] +"</td>");}
+                if (b == 3) {tableHTML += ("<td>"+ tasks[a]['task_name'] +"</td>");}
+            }
+            tableHTML += ("</tr>");
+        }
+        tableHTML += ("</tbody></table")
+        document.getElementById("task_table").innerHTML = tableHTML
+    }
+</script>
+{% endblock %}
+{% endblock %}
+

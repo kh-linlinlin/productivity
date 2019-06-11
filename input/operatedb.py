@@ -40,7 +40,7 @@ def validate(form, request, update_status):
 		post.members = [post.user.pk]
 
 		if profile.is_grp:
-			group = Group.objects.get(curr_grp = post.user)
+			group = Group.objects.get(grp_name = post.user)
 			all_members = group.users.all()
 			for member in all_members:
 				user_list.append(member)

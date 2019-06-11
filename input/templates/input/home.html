@@ -15,13 +15,12 @@ $.ajax({
         setChart(data.chartdata)
     },
     error: function(error_data){
-        console.log("error")
-        console.log(error_data)
+       alert("Error! " + error_data)
     }
 })
 
 function setChart(chartData){
-	console.log(chartData)
+
 	chartData = chartData
     var ctx = document.getElementById("myChart");
     var myChart = new Chart(ctx, {
@@ -64,7 +63,6 @@ function setChart(chartData){
 
 function summarytable(table) {
 	var tasks = Object.keys(table)
-	console.log(tasks)
 	var tableHTML = ''
 	tableHTML += '<table class="table table-hover table-bordered align="center" ">\
 		    		<thead class = "thead-light">\
@@ -101,12 +99,10 @@ function summarytable(table) {
 
 
 {% block home %}
-<!-- <div class='row'> -->
 	<div id = "summary-table" >
     </div>
     <br><br>
     <div class='col-sm-6' url-endpoint='{% url "input:api-data" %}'>
         <canvas id="myChart" width="400" height="400"></canvas>
     </div>
-<!-- </div> -->
 {% endblock home %}
