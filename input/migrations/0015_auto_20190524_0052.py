@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='post',
             name='ctime',
-            field=models.DateTimeField(default=datetime.datetime(2019, 5, 23, 16, 52, 3, 384081, tzinfo=utc)),
+            field=models.DateTimeField(),
         ),
     ]

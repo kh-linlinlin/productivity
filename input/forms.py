@@ -15,9 +15,9 @@ class ActionForm(forms.ModelForm):
 		fields = ('user_name', 'task', 'work_complete')
 
 	def clean(self):
-		self.cleaned_data['user_name'].upper()
-		self.cleaned_data['task'].upper()
-		self.cleaned_data['work_complete'].upper()
+		self.cleaned_data['user_name']
+		self.cleaned_data['task']
+		self.cleaned_data['work_complete']
 		print(self.cleaned_data)
 
 		return self.cleaned_data    

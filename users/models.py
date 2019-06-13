@@ -10,6 +10,7 @@ class Profile(models.Model):
 	is_grp = models.BooleanField(default = 0) # is_grp = 0: Individual, is_grp = 1: Group
 	is_lead = models.BooleanField(default = 0) # 0: Agent, 1: Lead / Supervisor / WH Managers
 	whs_id = models.CharField(max_length = 100, null = True)
+	operator_email = models.CharField(max_length = 200)
 
 	name =  models.CharField(max_length = 500, default = 'Default Name')
 	default_function = models.CharField(max_length = 500, default = '')

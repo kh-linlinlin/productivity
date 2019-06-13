@@ -112,12 +112,6 @@
               }, onError: function(errmsg){ alert('Work Complete Field Error! ' + errmsg);}
           });
 
-          $(document).keypress(
-			  function(event){
-			    if (event.which == '13') {
-			      event.preventDefault();
-			    }
-			});
 
           $('#action_form').on('submit', function(event){
             $this = $(this);
@@ -133,28 +127,48 @@
               create_post(update_status);
             }
           });
+ 
+          // document.getElementById("div_id_work_complete").addEventListener('keydown', function(event){
+          //   if(event.keyCode == 17 || event.keyCode == 74 ){
+          //     event.preventDefault();
+          //     console.log("redirect event");
+          //   } 
+          //     console.log(event.charCode)
+          //     work_complete = $("id_work_complete").val();
+          //     console.log(work_complete)
+          //     if (work_complete) {
+          //       work_validation(task, work_complete);
+          //       if (output_valid) {
+          //         console.log("Valid Output!")
+          //         update_status = false;
+          //         create_post(update_status);
+          //       }
+          //       $("id_work_complete").val('');
+          //       $('id_work_complete').focus();
+          //    }
+          //   });
 
-          $("#div_id_work_complete").scannerDetection({
-              timeBeforeScanTest: 200,
-              avgTimeByChar: 60,    
-              preventDefault: true, 
-              endChar: [13],   
-              onComplete: function(workValue, qty) {
-                work_complete = workValue;
-                work_validation(task, work_complete);
-                if (output_valid) {
-                  console.log("Valid Output!")
-                  update_status = false;
-                  create_post(update_status);
-                }
-                $("id_work_complete").val('');
-                $('id_work_complete').focus();
-              }, onError: function(errmsg){alert('Work Complete Field Error! ' + errmsg);}
-            });
+        $("#div_id_work_complete").scannerDetection({
+            timeBeforeScanTest: 200,
+            avgTimeByChar: 60,    
+            preventDefault: true, 
+            endChar: [13],   
+            onComplete: function(workValue, qty) {
+              work_complete = workValue;
+              work_validation(task, work_complete);
+              if (output_valid) {
+                console.log("Valid Output!")
+                update_status = false;
+                create_post(update_status);
+              }
+              $("id_work_complete").val('');
+              $('id_work_complete').focus();
+            }, onError: function(errmsg){alert('Work Complete Field Error! ' + errmsg);}
+          });
         }, error : function(xhr, errmsg, err) {alert("Invalid User!")}
       });
       }, onError: function(xhr, errmsg, err) {alert('Scanner Error ' + errmsg);}
-  });
+    });
 
 
   function show_task(data){
@@ -299,11 +313,8 @@
       formdata += "&task=" + encodeURIComponent(task);
     }
     console.log(formdata)
-    if (update_status) {
-      url = "/ajax/post/"
-    } else {
-      url = "/ajax/record/"
-    }
+    if (update_status) {url = "/ajax/post/"
+    } else {url = "/ajax/record/"}
 
     $.ajax({
       url : url, 
