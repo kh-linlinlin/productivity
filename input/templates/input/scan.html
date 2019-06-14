@@ -59,13 +59,12 @@
   var task = ''
   var is_group = false
   var work_complete = ''
-  var output_valid = false
   var need_output = true;
 
   $("#id_user_name").focus();
   $('#id_user_name').scannerDetection({
-    timeBeforeScanTest: 200,
-    avgTimeByChar: 60,    
+    timeBeforeScanTest: 100,
+    avgTimeByChar: 40,    
     preventDefault: true, 
     endChar: [13],   
     onComplete: function(barcodeValue, qty) {
@@ -84,8 +83,8 @@
           show_task(data);  
 
           $("#div_id_task").scannerDetection({
-              timeBeforeScanTest: 200,
-              avgTimeByChar: 60,    
+              timeBeforeScanTest: 100,
+              avgTimeByChar: 40,    
               preventDefault: true, 
               endChar: [13],   
               onComplete: function(taskValue, qty) {
@@ -115,7 +114,7 @@
 
           $('#action_form').on('submit', function(event){
             $this = $(this);
-            if (event.keyCode == 13 || event.keyCode == 17 || event.keyCode == 74 || $this.data().isSubmitted) {
+            if (event.keyCode == 13 || event.keyCode == 17 || event.keyCode == 74) {
               event.preventDefault();
               return false;
             } else {
@@ -123,44 +122,20 @@
               update_status = true;
               $(":submit", this).attr("disabled", "disabled");
               console.log("Multiple submissions are blocked")
-              $this.data().isSubmitted = true;
+              // $this.data().isSubmitted = true;
               create_post(update_status);
             }
           });
- 
-          // document.getElementById("div_id_work_complete").addEventListener('keydown', function(event){
-          //   if(event.keyCode == 17 || event.keyCode == 74 ){
-          //     event.preventDefault();
-          //     console.log("redirect event");
-          //   } 
-          //     console.log(event.charCode)
-          //     work_complete = $("id_work_complete").val();
-          //     console.log(work_complete)
-          //     if (work_complete) {
-          //       work_validation(task, work_complete);
-          //       if (output_valid) {
-          //         console.log("Valid Output!")
-          //         update_status = false;
-          //         create_post(update_status);
-          //       }
-          //       $("id_work_complete").val('');
-          //       $('id_work_complete').focus();
-          //    }
-          //   });
 
         $("#div_id_work_complete").scannerDetection({
-            timeBeforeScanTest: 200,
-            avgTimeByChar: 60,    
+            timeBeforeScanTest: 100,
+            avgTimeByChar: 40,    
             preventDefault: true, 
             endChar: [13],   
             onComplete: function(workValue, qty) {
               work_complete = workValue;
+              console.log(workValue);
               work_validation(task, work_complete);
-              if (output_valid) {
-                console.log("Valid Output!")
-                update_status = false;
-                create_post(update_status);
-              }
               $("id_work_complete").val('');
               $('id_work_complete').focus();
             }, onError: function(errmsg){alert('Work Complete Field Error! ' + errmsg);}
@@ -303,7 +278,6 @@
 
   //AJAX for posting form
   function create_post(update_status){
-    $("#action_form").attr('disabled','disabled');
     var formdata = $('#action_form').serialize();
 
     // add fields value when they are empty
@@ -341,10 +315,11 @@
         dataType: 'json',
         success: function (data) {
           if (data['valid']) {
-            output_valid = true
             $("div_id_work_complete").val(work_complete);
+            console.log("Valid Output!")
+            update_status = false;
+            create_post(update_status);
           } else {
-            output_valid = false
             $("div_id_work_complete").val('');
             alert("Invalid! User/task barcodes are detected.");
             return false;

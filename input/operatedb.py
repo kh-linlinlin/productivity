@@ -32,7 +32,6 @@ def validate(form, request, update_status):
 	if form.is_valid():
 		post = form.save(commit = False)
 		text = form.clean()
-		print(text)
 		
 		post.user = get_user_by_username(text['user_name'])
 		profile = Profile.objects.filter(user = post.user).first()
@@ -58,5 +57,5 @@ def validate(form, request, update_status):
 			action = "Record"
 
 		post.action = action
-		post.save()						
+		post.save()					
 		return text
