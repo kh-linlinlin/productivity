@@ -59,7 +59,6 @@ def get_about_data(request, *args, **kwargs):
     'users': users, 
     'tasks': tasks
     }
-    print(data)
     return JsonResponse(data)
 
 
@@ -94,7 +93,7 @@ class ScanView(TemplateView):
 
 
     def post( request):
-        print(request)
+        # print(request)
         if request.method == 'POST':
             form = ActionForm(request.POST)
             text = validate(form, request, update_status = True) 
@@ -145,7 +144,9 @@ def get_member_list(request):
     for member in all_members:
         member_info = User.objects.filter(username = member.username).first()
         member_profile = Profile.objects.filter(user = member_info).first()
-        if group_status == member_profile.status:
+        if member_profile is None:
+            Group.remove_member(user, member)
+        elif group_status == member_profile.status:
             members.append(member_info.pk)
             names.append(member_info.username)
         else:
@@ -166,6 +167,7 @@ def modify_grp(request, owner, modification, member):
         'success': False,
         'msg': '',
     }
+    group_profile = Profile.objects.filter(user = owner).first()
 
     if modification == 'add':
         member_profile = Profile.objects.filter(user = member).first()
@@ -174,10 +176,15 @@ def modify_grp(request, owner, modification, member):
             return JsonResponse(data)
         else:
             Group.add_member(owner, member)
+            if group_profile.status == 2:
+                update_profile([member], {'task': group_profile.current_task} , 'Start')
             data['success'] = True
             data['msg'] = member.username + " is added to " + owner.username
+
     elif modification == 'remove':
         Group.remove_member(owner, member)
+        if group_profile.status == 2:
+            update_profile([member], {'task': ''} , 'End')
         data['success'] = True
         data['msg'] = member.username + " is removed from " + owner.username
     return JsonResponse(data)
@@ -215,6 +222,20 @@ def validate_work_complete(request):
 
     return JsonResponse(data)
 
+def load_work_complete(request):
+    user = request.GET.get('username', None)
+    data = {
+        'Records': ''
+    }
+    records = []
+
+    if user is not None:
+        records_queryset = Post.objects.filter(ctime__gte=datetime.datetime.now().date()).\
+        filter(user_name = user).filter(action = 'Record').exclude(work_complete = '').order_by('-ctime')
+        for record in records_queryset:
+            records.append(str(record.ctime) + '  ' + record.work_complete )
+        data['Records'] = records
+    return JsonResponse(data)
 
 
 

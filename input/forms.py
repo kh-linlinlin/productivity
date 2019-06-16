@@ -18,7 +18,6 @@ class ActionForm(forms.ModelForm):
 		self.cleaned_data['user_name']
 		self.cleaned_data['task']
 		self.cleaned_data['work_complete']
-		print(self.cleaned_data)
 
 		return self.cleaned_data    
 

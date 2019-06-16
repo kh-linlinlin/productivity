@@ -11,13 +11,9 @@ def update_profile(user_list, text, action):
 	elif action == 'End':
 		new_status = 1
 		current_task = 'None'
-	elif action == 'Record':
-		print("Recording ONLY")
 	elif action == 'Break':
 		new_status = 3
 		current_task = 'Break'
-	else:
-		print("Action Mismatch")
 
 	for member in user_list:
 		profile = Profile.objects.filter(user = member).first()	

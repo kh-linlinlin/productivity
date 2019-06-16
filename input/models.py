@@ -24,7 +24,6 @@ class Group(models.Model):
 
 	@classmethod
 	def add_member(cls, curr_grp, new_member):
-		print(curr_grp)
 		group, created = cls.objects.get_or_create(
 			grp_name = curr_grp
 		)
