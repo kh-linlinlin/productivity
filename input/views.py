@@ -248,7 +248,7 @@ def download_input_post(request):
 
     writer = csv.writer(response)
     writer.writerow(['user_name', 'task', 'user', 'work_complete', 'action', 'members', 'ctime'])
-    history = Post.objects.filter(ctime__lte=datetime.datetime.now().date() - datetime.timedelta(days = 7))
+    history = Post.objects.filter(ctime__gte=datetime.datetime.now().date() - datetime.timedelta(days = 7))
     for row in history:
         writer.writerow([row.user_name, row.task, row.user, row.work_complete, row.action, row.members, row.ctime])
     return response
