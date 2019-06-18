@@ -16,6 +16,7 @@ urlpatterns = [
     url(r'^ajax/get_user/$', views.get_user_info, name='get_user_info'),
     url(r'^ajax/get_group_members/$', views.get_member_list, name='get_group_mmebers'),
     url(r'^ajax/check_task/$', views.check_task, name = "check-task"),
-    url(r'^ajax/validate_work_complete/$', views.validate_work_complete, name = "validate-work")
+    url(r'^ajax/validate_work_complete/$', views.validate_work_complete, name = "validate-work"),
+    url(r'^api/download_post/$', views.download_input_post, name = "Download-Input")
 ]
  

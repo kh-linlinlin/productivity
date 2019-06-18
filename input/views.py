@@ -9,7 +9,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from input.forms import  ActionForm, GroupForm
 from input.models import *
 from input.operatedb import * 
-import json, datetime
+import json, datetime, csv
 
 from users.models import Profile
 
@@ -123,11 +123,13 @@ def get_user_info(request):
     user_is_grp = True if int(profile.is_grp) == 1 else False
     user_status = profile.status
     user_curr_task = profile.current_task
+    user_is_lead = profile.is_lead
 
     data = {
         'status': user_status,
         'is_grp': user_is_grp,
         'task': user_curr_task,
+        'is_lead':  user_is_lead,
     }
     return JsonResponse(data)
 
@@ -238,5 +240,17 @@ def load_work_complete(request):
     return JsonResponse(data)
 
 
+
+def download_input_post(request):
+    # Create the HttpResponse object with the appropriate CSV header.
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="Tracking_Records.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['user_name', 'task', 'user', 'work_complete', 'action', 'members', 'ctime'])
+    history = Post.objects.filter(ctime__lte=datetime.datetime.now().date() - datetime.timedelta(days = 7))
+    for row in history:
+        writer.writerow([row.user_name, row.task, row.user, row.work_complete, row.action, row.members, row.ctime])
+    return response
 
 
