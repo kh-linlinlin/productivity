@@ -137,6 +137,7 @@
               work_complete = workValue;
               console.log(workValue);
               work_validation(task, work_complete);
+              load_work_complete();
             }, onError: function(errmsg){alert('Work Complete Field Error! ' + errmsg);}
           });
         }, error : function(xhr, errmsg, err) {alert("Invalid User!")}
@@ -291,7 +292,7 @@
       type : "POST", 
       data : formdata,          
       success : function(data) {
-        if ((update_status) | (task.includes('PACK'))) {
+        if ((update_status) | (task.includes('PACK'))| (task.includes('PICK')) ) {
           location.reload(true);
         }
       },
