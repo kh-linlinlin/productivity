@@ -137,8 +137,6 @@
               work_complete = workValue;
               console.log(workValue);
               work_validation(task, work_complete);
-              $("id_work_complete").val('');
-              $('id_work_complete').focus();
             }, onError: function(errmsg){alert('Work Complete Field Error! ' + errmsg);}
           });
         }, error : function(xhr, errmsg, err) {alert("Invalid User!")}
@@ -320,6 +318,8 @@
             alert("Invalid! User/task barcodes are detected.");
             return false;
           }
+          $("id_work_complete").val('');
+          $('id_work_complete').focus();
         },
         error: function(errmsg) {
           console.log("Work complete validation error! "+ errmsg)}
