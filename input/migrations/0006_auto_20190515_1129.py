@@ -12,14 +12,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-         migrations.CreateModel(
-            name='Post',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('post', models.CharField(max_length=100)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-            ],
-        ),
+    
         migrations.RenameField(
             model_name='post',
             old_name='post',

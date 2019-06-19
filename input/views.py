@@ -2,21 +2,65 @@ from django.shortcuts import render, redirect
 from django.views.generic import TemplateView
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.core.serializers import serialize
+from django.core.serializers.json import DjangoJSONEncoder
 
-from input.forms import UserForm, GroupForm
+
+from input.forms import  ActionForm, GroupForm
 from input.models import *
 from input.operatedb import * 
-import json
+import json, datetime, csv
 
 from users.models import Profile
 
 
-def home(request):
-    return render(request, 'input/home.html')
+def home(request, *args, **kwargs):
+    return render(request, 'input/home.html', {})
 
-def about(request):
-    users = User.objects.all()
-    return render(request, 'input/about.html', {'users': users})
+def get_data(request, *args, **kwargs):
+    queryset =  Profile.objects.values('name', 'current_task')
+    current_tasks = json.loads(json.dumps(list(queryset), cls=DjangoJSONEncoder))
+    
+    labels = []
+    tabledata = {}
+    chartdata = {}
+
+    for v in current_tasks:
+        task = v['current_task']
+        if task not in labels:
+            labels.append(task)
+            chartdata[task] = 1
+            tabledata[task] = {}
+            tabledata[task]['numbers'] = 1
+            tabledata[task]['names'] = [v['name']]
+        else:
+            chartdata[task] += 1
+            tabledata[task]['numbers'] += 1
+            tabledata[task]['names'].append(v['name'])
+
+    info = {
+     "labels": labels,
+     "tabledata": tabledata, 
+     "chartdata": list(chartdata.values()),  
+    }
+
+    return JsonResponse(info)
+
+def about(request, *args, **kwargs):
+    return render(request, 'input/about.html', {})
+
+def get_about_data(request, *args, **kwargs):
+    users = User.objects.values('id', 'username').order_by("id")
+    users = json.loads(json.dumps(list(users), cls=DjangoJSONEncoder))
+    tasks = Task.objects.values('category', 'task_code', 'task_name').order_by("category")
+    tasks = json.loads(json.dumps(list(tasks), cls=DjangoJSONEncoder))
+
+    data = {
+    'users': users, 
+    'tasks': tasks
+    }
+    return JsonResponse(data)
+
 
 def introduction(request):
     return render(request, 'input/introduction.html')
@@ -41,40 +85,51 @@ class ScanView(TemplateView):
             return response
 
     def get(self, request):
-        form1 = UserForm()
+        form1 = ActionForm()
         form2 = GroupForm()
-        args = {'form1': form1, 'form2': form2 }
+        posts = Post.objects.filter(ctime__gte=datetime.datetime.now().date()).exclude(action = 'Record').order_by('-ctime')
+        args = {'form1': form1, 'form2': form2 , 'posts': posts}
         return render(request, self.template_name, args)
 
 
-    def post(request):
+    def post( request):
+        # print(request)
         if request.method == 'POST':
-            form = UserForm(request.POST)
-            text = validate(form, request) 
-            return HttpResponse(text)
-
+            form = ActionForm(request.POST)
+            text = validate(form, request, update_status = True) 
+            return JsonResponse(text)
         else:
             return HttpResponse(
             json.dumps({"nothing to see": "this isn't happening"}),
             content_type="application/json"
         )
 
-
+    def record(request):
+        if request.method == 'POST':
+            form = ActionForm(request.POST)
+            text = validate(form, request, update_status = False) 
+            return JsonResponse(text)
+        else:
+            return HttpResponse(
+            json.dumps({"nothing to see": "this isn't happening"}),
+            content_type="application/json"
+        )
 
 def get_user_info(request):
-    print(request)
     username = request.GET.get('username', None)
     user = User.objects.filter(username = username).first()
     profile = Profile.objects.filter(user = user).first()
 
-    user_is_grp = profile.is_grp
+    user_is_grp = True if int(profile.is_grp) == 1 else False
     user_status = profile.status
     user_curr_task = profile.current_task
+    user_is_lead = profile.is_lead
 
     data = {
         'status': user_status,
         'is_grp': user_is_grp,
-        'task': user_curr_task
+        'task': user_curr_task,
+        'is_lead':  user_is_lead,
     }
     return JsonResponse(data)
 
@@ -82,14 +137,22 @@ def get_user_info(request):
 def get_member_list(request):
     username = request.GET.get('username', None)
     user = User.objects.filter(username = username).first()
-    group = Group.objects.get(curr_grp = user)
+    group = Group.objects.get(grp_name = user)
+    group_profile = Profile.objects.filter(user = user).first()
+    group_status = group_profile.status
     all_members = group.users.all()
     members = []
     names = []
     for member in all_members:
         member_info = User.objects.filter(username = member.username).first()
-        members.append(member_info.pk)
-        names.append(member_info.username)
+        member_profile = Profile.objects.filter(user = member_info).first()
+        if member_profile is None:
+            Group.remove_member(user, member)
+        elif group_status == member_profile.status:
+            members.append(member_info.pk)
+            names.append(member_info.username)
+        else:
+            Group.remove_member(user, member)
 
     data = {
         'members': members,
@@ -102,10 +165,92 @@ def modify_grp(request, owner, modification, member):
     member = User.objects.filter(username = member).first()
     owner = User.objects.filter(username = owner).first()
 
+    data = {
+        'success': False,
+        'msg': '',
+    }
+    group_profile = Profile.objects.filter(user = owner).first()
+
     if modification == 'add':
-        Group.add_member(owner, member)
-        msg = member.username + " is added to " + owner.username
+        member_profile = Profile.objects.filter(user = member).first()
+        if member_profile.status == 2:
+            data['msg'] =  member.username + " is currently in other tasks"
+            return JsonResponse(data)
+        else:
+            Group.add_member(owner, member)
+            if group_profile.status == 2:
+                update_profile([member], {'task': group_profile.current_task} , 'Start')
+            data['success'] = True
+            data['msg'] = member.username + " is added to " + owner.username
+
     elif modification == 'remove':
         Group.remove_member(owner, member)
-        msg = member.username + " is removed from " + owner.username
-    return HttpResponse(msg)
+        if group_profile.status == 2:
+            update_profile([member], {'task': ''} , 'End')
+        data['success'] = True
+        data['msg'] = member.username + " is removed from " + owner.username
+    return JsonResponse(data)
+
+
+def check_task(request):
+    task = request.GET.get('task', None)
+    data = {
+        'valid': False,
+        'need_output': False
+    }
+    tasks_queryset = Task.objects.all().values('task_code')
+    task_list = json.dumps(list(tasks_queryset), cls = DjangoJSONEncoder)
+
+    if task in task_list:
+        data['valid'] = True
+        data['need_output'] = Task.objects.get(task_code = task).output_record 
+    return JsonResponse(data)
+
+
+def validate_work_complete(request):
+    task = request.GET.get('task', None)
+    work = request.GET.get('work_complete', None)
+    data = {
+        'valid': False
+    }
+
+    tasks_queryset = Task.objects.all().values('task_code')
+    task_list = json.dumps(list(tasks_queryset), cls = DjangoJSONEncoder)
+    users_queryset = User.objects.all().values('username')
+    user_list = json.dumps(list(users_queryset), cls = DjangoJSONEncoder)
+
+    if not ((work in task_list) | (work in user_list)):
+        data['valid'] = True
+
+    return JsonResponse(data)
+
+def load_work_complete(request):
+    user = request.GET.get('username', None)
+    data = {
+        'Records': ''
+    }
+    records = []
+
+    if user is not None:
+        records_queryset = Post.objects.filter(ctime__gte=datetime.datetime.now().date()).\
+        filter(user_name = user).filter(action = 'Record').exclude(work_complete = '').order_by('-ctime')
+        for record in records_queryset:
+            records.append(str(record.ctime) + '  ' + record.work_complete )
+        data['Records'] = records
+    return JsonResponse(data)
+
+
+
+def download_input_post(request):
+    # Create the HttpResponse object with the appropriate CSV header.
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="Tracking_Records.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['user_name', 'task', 'user', 'work_complete', 'action', 'members', 'ctime'])
+    history = Post.objects.filter(ctime__gte=datetime.datetime.now().date() - datetime.timedelta(days = 7))
+    for row in history:
+        writer.writerow([row.user_name, row.task, row.user, row.work_complete, row.action, row.members, row.ctime])
+    return response
+
+

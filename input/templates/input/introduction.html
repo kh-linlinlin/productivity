@@ -2,19 +2,34 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-<div class = "container">
-<h1>Tasks available</h1>
-</div>
-<br><br>
+<article class="media content-section">
+  <div class="media-body">
+    <div class="article-metadata">
+      <h3><a class="mr-2" > Instructions </a></h3>
+    </div>
+    <b><a class="article-title" >Start New Task:</a></b>
+    <p class="article-content"> 
+    	1/ Scan Your Barcode
+    	2/ Click "Enter" 
+    	3/ Scan Task Barcode
+    	4/ Click "Start"
+    </p>
+    <b><a class="article-title" >End Current Task</a></b>
+    <p class="article-content"> 
+    	1/ Scan Your Barcode 
+    	2/ Click "Enter" 
+    	3/ Input Work Complete 
+    	<div class = "small">
+    	 - Receiving: Box ID <br>
+    	 - Bundling: Box ID & SKU ID <br>
+    	 - Putaway: (from system) <br>
+    	 - Picking: (from system) <br>
+    	 - Packing: Order Number <br>
+    	</div><br>
+    	4/ Click "End"
 
-<div class = "container">
-<h1>Steps to start a task</h1>
-</div>
-<br><br>
+    </p>
 
-<div class = "container">
-<h1>Steps to End a task</h1>
-</div>
-<br><br>
-
+  </div>
+</article>
 {% endblock content %}

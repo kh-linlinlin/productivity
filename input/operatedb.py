@@ -3,39 +3,55 @@ from users.models import Profile
 from input.models import *
 
 
-def update_profile(user, text, action):
-	profile = Profile.objects.filter(user = user).first()
+def update_profile(user_list, text, action):	
+
 	if action == 'Start':
-		profile.status = 2 
-		profile.current_task = text['task']
+		new_status = 2 
+		current_task = text['task']
 	elif action == 'End':
-		profile.status = 1
-		profile.current_task = 'None'
-	else:
-		print("Action Mismatch!")
-	print(profile)
-	profile.save()
+		new_status = 1
+		current_task = 'None'
+	elif action == 'Break':
+		new_status = 3
+		current_task = 'Break'
+
+	for member in user_list:
+		profile = Profile.objects.filter(user = member).first()	
+		profile.status = new_status
+		profile.current_task = current_task
+		profile.save()
 	
 
 
-def validate(form, request):
-	print(form)
+def validate(form, request, update_status):
+	action = "Error"
 	if form.is_valid():
 		post = form.save(commit = False)
-		text = form.cleaned_data
+		text = form.clean()
 		
 		post.user = get_user_by_username(text['user_name'])
 		profile = Profile.objects.filter(user = post.user).first()
-		if profile.status == 2:
-			action = "End"
-			msg = text['user_name'] + " ends task"
-		elif profile.status == 1:
-			action = "Start"
-			msg = text['user_name'] +" starts task: " + text['task'] + " at "
+		user_list = [post.user]
+		post.members = [post.user.pk]
+
+		if profile.is_grp:
+			group = Group.objects.get(grp_name = post.user)
+			all_members = group.users.all()
+			for member in all_members:
+				user_list.append(member)
+				post.members.append(member.pk)
+
+		if update_status:
+			if text['task'] == 'MYLBRK001':
+				action = "Break"
+			elif profile.status == 2:
+				action = "End"
+			else:
+				action = "Start"
+			update_profile(user_list, text, action)	
+		else:
+			action = "Record"
+
 		post.action = action
-		post.save()
-		update_profile(post.user, text, action)
-	else:
-		msg = "Invalid Form!"
-		print(msg)
-	return msg
+		post.save()					
+		return text
