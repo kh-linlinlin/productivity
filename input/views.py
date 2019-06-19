@@ -10,6 +10,7 @@ from input.forms import  ActionForm, GroupForm
 from input.models import *
 from input.operatedb import * 
 import json, datetime, csv
+import pandas as pd
 
 from users.models import Profile
 
@@ -18,7 +19,7 @@ def home(request, *args, **kwargs):
     return render(request, 'input/home.html', {})
 
 def get_data(request, *args, **kwargs):
-    queryset =  Profile.objects.values('name', 'current_task')
+    queryset =  Profile.objects.exclude(current_task = 'None').values('name', 'current_task')
     current_tasks = json.loads(json.dumps(list(queryset), cls=DjangoJSONEncoder))
     
     labels = []
@@ -240,17 +241,18 @@ def load_work_complete(request):
     return JsonResponse(data)
 
 
-
 def download_input_post(request):
     # Create the HttpResponse object with the appropriate CSV header.
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="Tracking_Records.csv"'
+    response['Content-Disposition'] = 'attachment; filename="Tracking_Records_'+ str(datetime.datetime.now())+ '.csv"'
 
     writer = csv.writer(response)
     writer.writerow(['user_name', 'task', 'user', 'work_complete', 'action', 'members', 'ctime'])
     history = Post.objects.filter(ctime__gte=datetime.datetime.now().date() - datetime.timedelta(days = 7))
     for row in history:
-        writer.writerow([row.user_name, row.task, row.user, row.work_complete, row.action, row.members, row.ctime])
+        row_ctime = (pd.to_datetime(row.ctime) + datetime.timedelta(hours = 8)).strftime("%Y-%m-%d %H:%M:%S")
+        print(type(row_ctime))
+        writer.writerow([row.user_name, row.task, row.user, row.work_complete, row.action, row.members, row_ctime])
     return response
 
 
