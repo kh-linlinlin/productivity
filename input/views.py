@@ -50,6 +50,7 @@ def about(request, *args, **kwargs):
     return render(request, 'input/about.html', {})
 
 def get_about_data(request, *args, **kwargs):
+    print(request)
     users = User.objects.values('id', 'username').order_by("id")
     users = json.loads(json.dumps(list(users), cls=DjangoJSONEncoder))
     tasks = Task.objects.values('category', 'task_code', 'task_name').order_by("category")
