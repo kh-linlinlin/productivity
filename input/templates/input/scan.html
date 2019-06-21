@@ -10,14 +10,14 @@
         <div id = "backbuttonfield" style = "visibility: hidden;" >
         <p><a class="button" href="{% url 'input:scan' %}" > Change User </a></p>
         </div>
-        <div id = "history">      
+        <!-- <div id = "history">      
           <br><br>
           <h3><a class="mr-2" > Start & End Task History Today </a></h3> 
           {% for post in posts %}
           <p class="article-content"> <small class="text-muted">{{ post.ctime }}</small>
           {{post.user_name}} {{ post.action }} {{ post.task }} </p> 
           {% endfor %}  
-        </div>
+        </div> -->
 
         <div style = "visibility: hidden;" required value = "taskValue">     
         {{ form1.task | as_crispy_field}}

@@ -15,8 +15,8 @@ import pandas as pd
 from users.models import Profile
 
 
-def home(request, *args, **kwargs):
-    return render(request, 'input/home.html', {})
+def dashboard(request, *args, **kwargs):
+    return render(request, 'input/dashboard.html', {})
 
 def get_data(request, *args, **kwargs):
     queryset =  Profile.objects.exclude(current_task = 'None').values('name', 'current_task')
@@ -65,6 +65,9 @@ def get_about_data(request, *args, **kwargs):
 
 def introduction(request):
     return render(request, 'input/introduction.html')
+
+def admin(request):
+    return render(request, 'input/local_admin.html')
 
 
 class ScanView(TemplateView):
@@ -124,6 +127,7 @@ def get_user_info(request):
     user_is_grp = True if int(profile.is_grp) == 1 else False
     user_status = profile.status
     user_curr_task = profile.current_task
+
     user_is_lead = profile.is_lead
 
     data = {
@@ -247,12 +251,11 @@ def download_input_post(request):
     response['Content-Disposition'] = 'attachment; filename="Tracking_Records_'+ str(datetime.datetime.now())+ '.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(['user_name', 'task', 'user', 'work_complete', 'action', 'members', 'ctime'])
+    writer.writerow(['task', 'user', 'work_complete', 'action', 'members', 'ctime'])
     history = Post.objects.filter(ctime__gte=datetime.datetime.now().date() - datetime.timedelta(days = 7))
     for row in history:
         row_ctime = (pd.to_datetime(row.ctime) + datetime.timedelta(hours = 8)).strftime("%Y-%m-%d %H:%M:%S")
-        print(type(row_ctime))
-        writer.writerow([row.user_name, row.task, row.user, row.work_complete, row.action, row.members, row_ctime])
+        writer.writerow([row.task, row.user, row.work_complete, row.action, row.members, row_ctime])
     return response
 
 
