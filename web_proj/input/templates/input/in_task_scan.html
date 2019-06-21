@@ -1,0 +1,17 @@
+{% extends "input/base.html" %}
+
+{% block content %}
+<div class = "container">
+  <h1> Scan WMS UserID </h1>
+  <form method = "post">
+    {% csrf_token %}
+    {{ form.wms_id }}
+    <br><br>
+    <h1> Scan Task Barcode </h1>
+    {{ form.task }}
+     <br><br>
+    <button type = "submit"> End Task </button>
+  </form>
+
+</div>
+{% endblock content %}
