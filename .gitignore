@@ -1,6 +1,6 @@
 Skip to content
  
-Search or jump to…
+Search or jump toâ€¦
 
 Pull requests
 Issues
@@ -26,6 +26,7 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+mysqlclient-1.4.2-cp36-cp36m-win32.whl
 .Python
 build/
 develop-eggs/
@@ -141,7 +142,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-© 2019 GitHub, Inc.
+Â© 2019 GitHub, Inc.
 Terms
 Privacy
 Security
