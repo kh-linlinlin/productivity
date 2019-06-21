@@ -1,0 +1,108 @@
+{% extends "input/local_admin.html" %}
+
+<script>
+{% block jquery %}
+var endpoint = '/api/data/'
+var labels = [];
+
+$.ajax({
+    method: "GET",
+    url: endpoint,
+    success: function(data){
+        labels = data.labels
+        table = data.tabledata
+        summarytable(table)
+        setChart(data.chartdata)
+    },
+    error: function(error_data){
+       alert("Error! " + error_data)
+    }
+})
+
+function setChart(chartData){
+
+	chartData = chartData
+    var ctx = document.getElementById("myChart");
+    var myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: '# of Agents',
+            data: chartData,
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.2)',
+                'rgba(54, 162, 235, 0.2)',
+                'rgba(255, 206, 86, 0.2)',
+                'rgba(75, 192, 192, 0.2)',
+                'rgba(153, 102, 255, 0.2)',
+                'rgba(255, 159, 64, 0.2)'
+            ],
+            borderColor: [
+                'rgba(255,99,132,1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)'
+            ],
+            borderWidth: 1
+	        }]
+    },
+    options: {
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero:true
+                }
+            }]
+        }
+    }
+	});
+	}
+
+function summarytable(table) {
+	var tasks = Object.keys(table)
+	var tableHTML = ''
+	tableHTML += '<table class="table table-hover table-bordered align="center" ">\
+		    		<thead class = "thead-light">\
+					    <tr>\
+					      <th scope="col">#</th>\
+					      <th scope="col">Task</th>\
+					      <th scope="col">Number of Agents</th>\
+					      <th scope="col">List of Agents</th>\
+					    </tr>\
+					  </thead>\
+					  <tbody>';
+
+	for(var i = 0; i < tasks.length ; i++ ) {
+	  var serial_no = i + 1
+	  var agentlistHTML = ''
+	  var agents = table[tasks[i]].names
+
+	  for (var j = 0; j < agents.length; j++){
+	  	agent = agents[j]
+	  	agentlistHTML += agent + '<br>'
+	  }
+	  tableHTML += '<tr>\
+				  <th scope="row">' + serial_no + '</th>\
+			      <td>' + tasks[i] + '</td>\
+			      <td>' + table[tasks[i]].numbers + '</td>\
+			      <td>' + agentlistHTML + '</td>\
+			    </tr>'
+	  }
+	tableHTML += '</tbody></table>'
+	document.getElementById("summary-table").innerHTML = tableHTML
+}
+{% endblock %}
+</script>
+
+
+{% block content %}
+	<div id = "summary-table" >
+    </div>
+    <br><br>
+    <div class='col-sm-6' url-endpoint='{% url "input:api-data" %}'>
+        <canvas id="myChart" width="400" height="400"></canvas>
+    </div>
+{% endblock content %}

@@ -3,12 +3,15 @@ from . import views
 from django.conf.urls import url
 
 urlpatterns = [
-	url(r'^$', views.home, name = 'home'),
+
 	url(r'^api/data/$', views.get_data, name = 'api-data'),
     url(r'^api/about_data/$', views.get_about_data, name = 'api-about-data'),
 	url(r'^introduction/$', views.introduction, name = 'introduction'),
 	url(r'^about/$', views.about, name = "about"),
+    url(r'^dashboard/$', views.dashboard, name = 'dashboard'),
     url(r'^scan/$', views.ScanView.as_view(), name = 'scan'),
+    url(r'^local/admin/$', views.admin, name = 'admin'),
+
     url(r'^ajax/load_work_complete/$', views.load_work_complete, name = 'load-work'),
     url(r'^ajax/post/$', views.ScanView.post, name = 'post'),
     url(r'^ajax/record/$', views.ScanView.record, name = 'record'),

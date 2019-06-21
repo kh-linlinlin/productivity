@@ -10,14 +10,14 @@
         <div id = "backbuttonfield" style = "visibility: hidden;" >
         <p><a class="button" href="{% url 'input:scan' %}" > Change User </a></p>
         </div>
-        <div id = "history">      
+        <!-- <div id = "history">      
           <br><br>
           <h3><a class="mr-2" > Start & End Task History Today </a></h3> 
           {% for post in posts %}
           <p class="article-content"> <small class="text-muted">{{ post.ctime }}</small>
           {{post.user_name}} {{ post.action }} {{ post.task }} </p> 
           {% endfor %}  
-        </div>
+        </div> -->
 
         <div style = "visibility: hidden;" required value = "taskValue">     
         {{ form1.task | as_crispy_field}}
@@ -44,7 +44,7 @@
       <div id= "groupfield" style = "visibility: hidden;">
       <p><b>Group Members</b></p>
       <form method = "post" id = "group_form" > {% csrf_token %} 
-      <div> <label for="id_member_name">Add members by scanning agent barcode:</label> 
+      <div id = "member_name"><label for="id_member_name">Add members by scanning agent barcode:</label> 
       {{form2.member_name | as_crispy_field }} </div>
       <button type="button" id = "add" class="btn btn-success btn-sm">Add</button>
       </form><br>     
@@ -159,7 +159,7 @@
     task = data['task']
     is_group = data['is_grp']
 
-    document.getElementById('div_id_user_name').innerHTML = '<h1> <font color = "red">' + "Logged in as: " + username + '</font></h1>';
+    document.getElementById('div_id_user_name').innerHTML = '<h1> <font color = "red">' + "Logged In: " + username + '</font></h1>';
     document.getElementById("div_id_task").style.visibility = "visible";        
     document.getElementById('backbuttonfield').style.visibility = "visible";
 
@@ -204,23 +204,47 @@
   function show_group(){
     document.getElementById('groupfield').style.visibility = "visible"
     
-    $(document).ready(function(){
-      load_members();
-      $('#add').click(function(event) {
-        event.preventDefault();
-        if (event.keyCode == 13 || event.keyCode == 17 || event.keyCode == 74) {
-              event.preventDefault();
-              return false;
-        } else {
-        var new_member = $('#id_member_name').val();
-        add_members(username, new_member);
-      }});
+    // $(document).ready(function(){
+    //   load_members();
 
-      $(document).on('click', '.remove', function() {
-        var old_member = $(this).attr('id');
-        remove_member(username, old_member)
-      });
-    });
+    //   $('#div_id_member_name').scannerDetection({
+    //     timeBeforeScanTest: 100,
+    //     avgTimeByChar: 40,    
+    //     preventDefault: true, 
+    //     endChar: [13],   
+    //     onComplete: function(memberValue, qty) {
+    //       var new_member = memberValue;
+    //       console.log(new_member);
+    //       $("div_div_id_member_name").val(memberValue);
+    //       // $("div_id_member_name").val(memberValue);
+    //        $('#add').click(function(event) {
+    //           event.preventDefault();
+    //           if (event.keyCode == 13 || event.keyCode == 17 || event.keyCode == 74) {
+    //                 event.preventDefault();
+    //                 return false;
+    //           } else {
+    //           add_members(username, new_member);
+    //         }});
+    //     }, onError: function(errmsg) {alert("Add member error! " + errmsg)}
+    //   });
+
+       $(document).ready(function(){
+          load_members();
+          $('#add').click(function(event) {
+            event.preventDefault();
+            if (event.keyCode == 13 || event.keyCode == 17 || event.keyCode == 74) {
+                  event.preventDefault();
+                  return false;
+            } else {
+            var new_member = $('#id_member_name').val();
+            add_members(username, new_member);
+          }});
+
+          $(document).on('click', '.remove', function() {
+            var old_member = $(this).attr('id');
+            remove_member(username, old_member)
+          });
+        });
   }
 
   function load_work_complete(){
@@ -299,8 +323,11 @@
       type : "POST", 
       data : formdata,          
       success : function(data) {
-        if ((update_status) | (task.includes('PACK'))| (task.includes('PICK')) ) {
+        // if ((update_status) | (task.includes('PACK'))| (task.includes('PICK')) | (task.includes('RECV')) ) {
+        if ((update_status) | (task.includes('PACK'))) {
           location.reload(true);
+        } else {
+          load_work_complete()
         }
       },
       Error: function(string) {alert('Post Error ' + string);}
