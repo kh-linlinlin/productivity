@@ -1,9 +1,0 @@
-id,task_code,category,task_name,output_record,whs_id
-1,MYLUNL001,IB,"Unloading at docks",1,MYL
-2,MYLRECV001,IB,"Receiving - Checking ER",1,MYL
-3,MYLRECV002,IB,"Receiving - Split & QC & Count",1,MYL
-4,MYLPICK001,OB,Picking,0,MYL
-5,MYLPACK001,OB,Packing,1,MYL
-6,MYLRECV003,IB,"QC & Qty Counting",1,MYL
-7,MYLPUT001,IB,Putaway,0,MYL
-8,MYLBRK001,BK,Break,0,MYL
