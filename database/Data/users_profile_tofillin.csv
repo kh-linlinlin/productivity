@@ -1,5 +1,0 @@
-id,wms_id,name,default_function,user_id,ctime,mime,status,current_grp,current_task,is_grp,is_lead,whs_id
-1,1234,Xu Jiana,Putaway,1,14/5/2019 11:29,26/5/2019 22:01,2,Individual,Picking,0,0,NULL
-2,2123,Test Garena,Receiving,2,14/5/2019 11:29,24/5/2019 19:03,1,Individual,None,0,0,MYL
-3,7982,Default Name,Picking,4,15/5/2019 13:49,24/5/2019 19:04,1,Individual,None,0,1,MYL
-4,0,Default Name,Putaway,3,16/5/2019 11:07,24/5/2019 11:47,1,Individual,None,1,0,MYL
