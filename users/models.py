@@ -7,7 +7,7 @@ from django.dispatch import receiver
 
 class Profile(models.Model):
 
-	user = models.OneToOneField(User,  on_delete = models.CASCADE, related_name = 'auth_user')
+	user = models.OneToOneField(User,  on_delete = models.CASCADE)
 	wms_id = models.IntegerField(default = 0)
 	is_grp = models.BooleanField(default = 0) # is_grp = 0: Individual, is_grp = 1: Group
 	is_lead = models.BooleanField(default = 0) # 0: Agent, 1: Lead / Supervisor / WH Managers
@@ -22,9 +22,9 @@ class Profile(models.Model):
 	mime = models.DateTimeField(auto_now = True)
 
 
-
 	def __str__(self):
 		return f'{self.user.username}'
+
 
 # @receiver(post_save, sender=User)
 # def create_user_profile(sender, instance, created, **kwargs):
